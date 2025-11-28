@@ -1,0 +1,42 @@
+---
+version: "3.8"
+
+services:
+  apt-cacher-ng:
+    hostname: aptcache1
+    domainname: ${LOCAL_DOMAIN}
+    container_name: apt-cacher-ng
+    #image: docker.io/dmbrownlee/apt-cacher-ng:latest
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - cache:/var/cache/apt-cacher-ng
+      - log:/var/log/apt-cacher-ng
+    expose:
+      - "3142/tcp"
+    dns:
+      - ${NS1_IP}
+      - ${NS2_IP}
+    dns_search: ${LOCAL_DOMAIN}
+    networks:
+      net1:
+        ipv4_address: ${THIS_IP}
+
+networks:
+  net1:
+    external: true
+    name: ${LAN_NAME}
+
+volumes:
+  cache:
+    driver_opts:
+      type: "nfs"
+      o: "addr=${NFS_SERVER},nolock,rw,soft,nfsvers=4.2"
+      device: ":${NFS_PATH}/${COMPOSE_PROJECT_NAME}/cache"
+  log:
+    driver_opts:
+      type: "nfs"
+      o: "addr=${NFS_SERVER},nolock,rw,soft,nfsvers=4.2"
+      device: ":${NFS_PATH}/${COMPOSE_PROJECT_NAME}/log"
